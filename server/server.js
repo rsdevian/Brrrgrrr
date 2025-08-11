@@ -14,20 +14,26 @@ const app = express();
 
 const port = process.env.PORT;
 
-const allowedOrigins = process.env.CORS_ORIGIN.split(",");
+const allowedOrigins = process.env.CORS_ORIGIN.split(",").map((o) =>
+    o.trim().replace(/\/$/, "")
+);
 
 app.use(
     cors({
-        origin: function (origin, callback) {
-            if (!origin || allowedOrigins.includes(origin)) {
+        origin: (origin, callback) => {
+            if (!origin) return callback(null, true); // allow server-to-server calls
+            const cleanedOrigin = origin.replace(/\/$/, "");
+            if (allowedOrigins.includes(cleanedOrigin)) {
                 callback(null, true);
             } else {
-                callback(new Error("Not allowed by CORS"));
+                callback(new Error("Not allowed by CORS: " + origin));
             }
         },
         credentials: true,
     })
 );
+
+app.options("*", cors()); // Allow preflight
 
 app.use(express.json());
 
